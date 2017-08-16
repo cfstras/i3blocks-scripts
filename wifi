@@ -1,7 +1,10 @@
 #!/bin/bash
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+source "$DIR/colors.txt"
+
 [[ "$BLOCK_BUTTON" == 1 ]] && nm-connection-editor
 
-[[ $(LC_ALL=C nmcli -f wifi -t g s) == 'disabled' ]] && exit 0
+[[ $(LC_ALL=C nmcli -f wifi -t g s) == 'off' ]] && exit 0
 
 network_name=$(
     LC_ALL=C nmcli -t -f name,device c s -a \
@@ -10,28 +13,31 @@ network_name=$(
 )
 
 if [[ -z $network_name ]]; then
-    printf 'disconnected\n\n#E41C28'
+    printf "none\n\n$color_warning"
 else
-    freq=$(iwconfig | grep -q 'Frequency:2' && printf '2.4' || printf '5')
+    freq=$(iwconfig 2>/dev/null| grep -q 'Frequency:2' && printf '2.4' || printf '5')
 
     addr=$(
-        ip addr show dev "$BLOCK_INSTANCE" \
+        ip addr show dev "$BLOCK_INSTANCE" 2>/dev/null \
             | grep 'inet ' \
             | sed 's/\s\+inet \([0-9./]\+\).*/\1/'
     )
     [[ -n "$addr" ]] || addr="no IPv4"
 
     link_quality=$(
-        iwconfig \
+        iwconfig 2>/dev/null \
             | grep 'Link Quality' \
             | sed 's/\s\+Link Quality=\([0-9]\+\/[0-9]\+\).*/\1/'
     )
 
     if [[ $(bc <<< "scale=2; $link_quality < 0.6") == 1 ]]; then
-        color="#EEBF13"
+        color="$color_wifi_bad"
     else
-        color="#3C913B"
+        color="$color_wifi_good"
     fi
 
-    printf '%s (%s\u2009GHz), %s\n\n%s' "$network_name" "$freq" "$addr" "$color"
+    net_name_short=$(echo "$network_name" \
+        | sed 's/[^a-zA-Z0-9_ \-]//g' \
+        | cut -c-15)
+    printf '%s %sG %s\n\n%s' "$net_name_short" "$freq" "$addr" "$color"
 fi

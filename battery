@@ -2,15 +2,15 @@
 cd "/sys/class/power_supply/$BLOCK_INSTANCE/"
 
 status=$(cat status)
-charge_f=$((100 * $(cat charge_now) / $(cat charge_full)))
+energy_f=$((100 * $(cat energy_now) / $(cat energy_full)))
 
-if [[ "$charge_f" -lt 20 ]]; then
+if [[ "$energy_f" -lt 20 ]]; then
     printf '\uf244'
-elif [[ "$charge_f" -lt 40 ]]; then
+elif [[ "$energy_f" -lt 40 ]]; then
     printf '\uf243'
-elif [[ "$charge_f" -lt 60 ]]; then
+elif [[ "$energy_f" -lt 60 ]]; then
     printf '\uf242'
-elif [[ "$charge_f" -lt 80 ]]; then
+elif [[ "$energy_f" -lt 80 ]]; then
     printf '\uf241'
 else
     printf '\uf240'
@@ -24,6 +24,8 @@ elif [[ "$status" == 'Discharging' ]]; then
     printf '\uf107'
 elif [[ "$status" == 'Full' ]]; then
     printf '\uf0e7'
+elif [[ "$status" == 'Unknown' ]]; then
+    printf '?'
 else
     printf '[%s]' "$status"
 fi
@@ -31,18 +33,19 @@ fi
 printf '  '
 
 if [[ "$status" != 'Full' ]]; then
-    rate_raw=$(($(cat voltage_now) * $(cat current_now)))
-    rate=$(bc <<< "scale=2; $rate_raw / 10^12")
+    rate_raw=$(cat power_now)
+    rate=$(bc <<< "scale=1; $rate_raw / 10^6")
     printf '%s\u2009W, ' "$rate"
 fi
 
-charge_d=$((100 * $(cat charge_now) / $(cat charge_full_design)))
-printf '%s%%\n' "$charge_d"
+energy_d=$((100 * $(cat energy_now) / $(cat energy_full_design)))
+printf '%s%%\n' "$energy_f"
 
 if [[ "$status" == 'Discharging' ]]; then
-    if [[ "$charge_d" -lt 10 ]]; then
+    # if battery has worse life than 20%, go yellow, 10% red
+    if [[ "$energy_d" -lt 10 ]]; then
         printf '\n#E41C28'
-    elif [[ "$charge_d" -lt 20 ]]; then
+    elif [[ "$energy_d" -lt 20 ]]; then
         printf '\n#EEBF13'
     fi
 fi

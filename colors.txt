@@ -1,6 +1,11 @@
-blue   = #3383AE
-green  = #3C913B
-yellow = #EEBF13
-red    = #E41C28
-grey   = #666666
+#!/bin/bash
 
+color_blue="#3383AE"
+color_green="#3C913B"
+color_yellow="#EEBF13"
+color_red="#E41C28"
+color_grey="#eeeeee"
+
+color_warning="#ffa856"
+color_wifi_bad="#EEBF13"
+coloR_wifi_good="#3C913B"
