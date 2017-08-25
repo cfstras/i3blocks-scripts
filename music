@@ -1,0 +1,68 @@
+#!/usr/bin/env python3
+import os
+import sys
+import gi
+import subprocess
+gi.require_version('Playerctl', '1.0')
+from gi.repository import Playerctl, GLib
+
+player = Playerctl.Player()
+
+import logging
+#logging.basicConfig(filename="/tmp/music.log", level=logging.DEBUG, format="%(asctime)-15s %(levelname)-8s %(message)s")
+logging.basicConfig(stream=sys.stderr, level=logging.DEBUG, format="%(asctime)-15s %(levelname)-8s %(message)s")
+def eh(t, val, tb):
+    logging.exception("%s %s %s", t, val, tb)
+sys.excepthook = eh
+
+def run_daemon():
+    logging.info("daemon started")
+    def notify():
+        ret = os.system("pkill -e -RTMIN+5 i3blocks >> /dev/null 2>&1")
+        logging.info("pkill ret: %s", ret)
+
+    def on_metadata(p, e):
+        logging.info("metadata %s", e)
+        notify()
+
+    def on_play(p):
+        logging.info("play")
+        notify()
+
+    def on_pause(p):
+        logging.info("pause")
+        notify()
+
+    player.on('play', on_play)
+    player.on('pause', on_pause)
+    player.on('metadata', on_metadata)
+
+    main = GLib.MainLoop()
+    main.run()
+
+if __name__ == "__main__":
+    for arg in sys.argv[1:]:
+        if arg == "--daemon":
+            run_daemon()
+        else:
+            print("Invalid argument", arg)
+            sys.exit(1)
+    path = os.path.realpath(__file__)
+    logging.info("my pid: %s" % os.getpid())
+    p = subprocess.Popen(("pgrep", "-f", "%s --daemon" % path), stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE, preexec_fn=os.setpgrp)
+    out,err = p.communicate()
+    logging.info("pgrep:%s %s", out, err)
+    if p.returncode != 0:
+        logging.info("starting daemon")
+        p = subprocess.Popen(("%s" % path, "--daemon"), stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE, preexec_fn=os.setpgrp)
+
+    if player.props.status == "Playing":
+        color = "#55ee55"
+        msg = "%s: %s" % (player.get_artist(), player.get_title())
+    else:
+        color = ""
+        msg = player.props.status
+    print(msg)
+    logging.info("printing: %s", msg)
+    print()
+    print(color)
