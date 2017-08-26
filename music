@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 import os
 import sys
 import gi
@@ -56,12 +57,21 @@ if __name__ == "__main__":
         logging.info("starting daemon")
         p = subprocess.Popen(("%s" % path, "--daemon"), stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE, preexec_fn=os.setpgrp)
 
+    if os.getenv("BLOCK_BUTTON", "") == "1":
+        if player.props.status == "Playing":
+            player.pause()
+        else:
+            player.play()
+
+    msg = "%s: %s" % (player.get_artist(), player.get_title())
     if player.props.status == "Playing":
         color = "#55ee55"
-        msg = "%s: %s" % (player.get_artist(), player.get_title())
+        msg += "    "
     else:
         color = ""
-        msg = player.props.status
+        msg += "    "
+        #msg = player.props.status
+
     print(msg)
     logging.info("printing: %s", msg)
     print()
