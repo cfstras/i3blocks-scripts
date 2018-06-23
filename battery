@@ -2,7 +2,30 @@
 cd "/sys/class/power_supply/$BLOCK_INSTANCE/"
 
 status=$(cat status)
-energy_f=$((100 * $(cat energy_now) / $(cat energy_full)))
+energy_now=
+energy_full=
+energy_full_design=
+if [ -f energy_now ]; then
+    energy_now=$(cat energy_now)
+    energy_full=$(cat energy_full)
+    energy_full_design=$(cat energy_full_design)
+elif [ -f charge_now ]; then
+    energy_now=$(cat charge_now)
+    energy_full=$(cat charge_full)
+    energy_full_design=$(cat charge_full_design)
+else
+    echo "unknown charge"
+fi
+rate_raw=
+if [ -f current_now ]; then
+    rate_raw=$(($(cat current_now) * $(cat voltage_now) / 1000000))
+elif [ -f power_now ]; then
+    rate_raw=$(cat power_now)
+else
+    echo "unknown current"
+fi
+
+energy_f=$((100 * energy_now / energy_full))
 
 if [[ "$energy_f" -lt 20 ]]; then
     printf '\uf244'
@@ -33,12 +56,11 @@ fi
 printf '  '
 
 if [[ "$status" != 'Full' ]]; then
-    rate_raw=$(cat power_now)
     rate=$(bc <<< "scale=1; $rate_raw / 10^6")
     printf '%s\u2009W, ' "$rate"
 fi
 
-energy_d=$((100 * $(cat energy_now) / $(cat energy_full_design)))
+energy_d=$((100 * energy_now / energy_full_design))
 printf '%s%%\n' "$energy_f"
 
 if [[ "$status" == 'Discharging' ]]; then
