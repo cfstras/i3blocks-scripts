@@ -1,7 +1,7 @@
 #!/bin/bash
 temp=$(
     sensors 'coretemp-*' \
-        | grep -e '^Package id' -e '^Physical id' \
+        | grep -e '^Package id' -e '^Physical id' -e '^Core .' \
         | awk '{ print $4 }' \
         | grep -o '[0-9]\+' \
         | head -n1
